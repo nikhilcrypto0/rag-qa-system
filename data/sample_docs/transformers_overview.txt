@@ -1,0 +1,32 @@
+Introduction to Transformer Models
+
+Transformer models were introduced in the 2017 paper "Attention Is All You Need" by Vaswani et al. They revolutionized natural language processing by replacing recurrent architectures with a purely attention-based mechanism.
+
+The core innovation is the self-attention mechanism, which allows each token in a sequence to attend to every other token simultaneously, enabling the model to capture long-range dependencies efficiently. This stands in contrast to RNNs and LSTMs, which process tokens sequentially.
+
+Architecture Overview
+
+A standard Transformer consists of an encoder and a decoder, each made up of stacked layers. Each layer contains:
+1. Multi-head self-attention: Multiple attention heads run in parallel, each learning different types of relationships between tokens.
+2. Feed-forward network: A two-layer fully connected network applied independently to each position.
+3. Layer normalization and residual connections: These stabilize training and allow gradients to flow more easily.
+
+The encoder processes the input sequence and produces contextualized representations. The decoder generates output sequences token-by-token, attending to both the encoder output and previously generated tokens.
+
+Positional Encoding
+
+Since Transformers have no inherent sense of sequence order (unlike RNNs), positional encodings are added to input embeddings. The original paper used sinusoidal functions, while modern variants often use learned positional embeddings.
+
+BERT and GPT
+
+Two landmark variants emerged from the Transformer architecture:
+- BERT (Bidirectional Encoder Representations from Transformers): Uses only the encoder, pre-trained with masked language modeling and next sentence prediction. Excels at understanding tasks like classification and question answering.
+- GPT (Generative Pre-trained Transformer): Uses only the decoder, pre-trained with causal language modeling. Excels at text generation tasks.
+
+Applications
+
+Transformers are now the foundation of virtually all state-of-the-art NLP systems, including machine translation, summarization, question answering, sentiment analysis, and code generation. They have also been successfully applied to computer vision (Vision Transformer / ViT), audio (Whisper), and multi-modal tasks.
+
+Scaling Laws
+
+Research has shown that Transformer performance scales predictably with model size, dataset size, and compute budget. This has motivated the development of large language models (LLMs) with hundreds of billions of parameters, such as GPT-4, Claude, and Gemini.

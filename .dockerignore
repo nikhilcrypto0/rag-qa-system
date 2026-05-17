@@ -1,0 +1,10 @@
+.env
+*.pyc
+__pycache__/
+.pytest_cache/
+venv/
+.venv/
+mlruns/
+data/faiss_index/
+*.log
+.git/

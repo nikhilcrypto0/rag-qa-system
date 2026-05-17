@@ -1,0 +1,37 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --color-bg: #0F172A;
+  --color-surface: #1E293B;
+  --color-surface-2: #334155;
+  --color-border: #475569;
+  --color-text: #F8FAFC;
+  --color-text-muted: #94A3B8;
+  --color-accent: #C8102E;
+  --color-accent-hover: #A50D25;
+  --color-accent-light: rgba(200, 16, 46, 0.12);
+  --color-success: #10B981;
+  --font: 'Inter', -apple-system, sans-serif;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-msg: 18px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --transition: 200ms ease;
+}
+
+html, body, #root {
+  height: 100%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { cursor: pointer; font-family: var(--font); }
+input, textarea { font-family: var(--font); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+}

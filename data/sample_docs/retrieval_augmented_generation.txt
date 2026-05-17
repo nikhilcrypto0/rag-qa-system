@@ -1,0 +1,49 @@
+Retrieval-Augmented Generation (RAG)
+
+Retrieval-Augmented Generation (RAG) is a technique that enhances large language model (LLM) responses by grounding them in retrieved external knowledge. It was introduced by Lewis et al. in 2020 and has become a cornerstone of production AI systems.
+
+Why RAG?
+
+LLMs are trained on static snapshots of data. After training, their knowledge is frozen. RAG addresses two key limitations:
+1. Knowledge cutoff: LLMs cannot know about events that occurred after their training cutoff.
+2. Hallucination: Without grounding, LLMs may generate plausible-sounding but incorrect information.
+
+By retrieving relevant documents at inference time and providing them as context, RAG allows models to answer questions based on up-to-date, authoritative sources.
+
+Core Components
+
+A RAG system consists of three main components:
+1. Document Store: An indexed collection of documents (text chunks) stored in a vector database or search engine.
+2. Retriever: A component that finds the most relevant documents given a user query. Retrievers may use sparse methods (BM25), dense methods (semantic embeddings), or a hybrid of both.
+3. Generator: An LLM that synthesizes a final answer from the retrieved context.
+
+Retrieval Strategies
+
+Sparse retrieval (BM25) uses term-frequency statistics to rank documents. It performs well for exact keyword matches but struggles with semantic variations.
+
+Dense retrieval uses neural embeddings (e.g., sentence-transformers) to encode both queries and documents into vector space. Cosine similarity is used to find the closest documents. Dense retrieval captures semantic meaning better than BM25.
+
+Hybrid retrieval combines both approaches: BM25 candidates and dense candidates are merged and then re-ranked using a cross-encoder model. This consistently outperforms either method alone.
+
+Chunking Strategy
+
+Documents are split into chunks before indexing. The chunk size and overlap affect retrieval quality:
+- Smaller chunks (256-512 tokens) enable precise retrieval but may lack context.
+- Larger chunks (1024+ tokens) preserve context but may dilute relevance signals.
+- Chunk overlap (e.g., 64 tokens) ensures that content near chunk boundaries is not lost.
+
+Evaluation Metrics
+
+RAG systems are evaluated on:
+- Faithfulness: Does the answer accurately reflect the retrieved context?
+- Answer relevance: Does the answer address the user's question?
+- Context recall: Does the retrieval include all information needed to answer?
+- NDCG@k: Normalized Discounted Cumulative Gain measures ranking quality at position k.
+
+Production Considerations
+
+In production, RAG systems must handle:
+- Latency: Sub-second retrieval is critical for user-facing applications.
+- Index freshness: Document stores must be updated as new content becomes available.
+- Scalability: Vector databases like Pinecone, Weaviate, and Qdrant are designed to scale to billions of vectors.
+- Monitoring: Query/response pairs should be logged for continuous quality evaluation.

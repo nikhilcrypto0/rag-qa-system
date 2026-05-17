@@ -1,0 +1,16 @@
+from functools import lru_cache
+
+from langchain_huggingface import HuggingFaceEmbeddings
+
+from app.config import get_settings
+
+
+@lru_cache(maxsize=1)
+def get_embeddings() -> HuggingFaceEmbeddings:
+    """Singleton HuggingFace embeddings model loaded once at startup."""
+    settings = get_settings()
+    return HuggingFaceEmbeddings(
+        model_name=settings.embed_model,
+        model_kwargs={"device": "cpu"},
+        encode_kwargs={"normalize_embeddings": True},
+    )
