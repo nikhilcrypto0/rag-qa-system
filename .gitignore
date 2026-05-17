@@ -44,3 +44,8 @@ mlruns/
 *.pt
 *.pth
 models/checkpoints/
+
+# Node
+node_modules/
+.next/
+dist/
