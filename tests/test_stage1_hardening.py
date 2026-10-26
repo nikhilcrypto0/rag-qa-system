@@ -46,8 +46,23 @@ def test_scraper_waits_before_each_request():
 def test_mlflow_never_logs_raw_question(_ensure, mock_mlflow):
     from app.monitoring.mlflow_logger import log_query_run
     question = "My student ID is 1234567, am I on probation?"
-    log_query_run(question, "answer", [], 10.0, 20.0)
+    answer = "Student 1234567: you are not on probation."
+    log_query_run(question, answer, [], 10.0, 20.0)
 
-    logged = [str(c) for c in mock_mlflow.log_param.call_args_list]
+    logged = [str(c) for c in mock_mlflow.log_param.call_args_list + mock_mlflow.log_text.call_args_list]
     assert not any("1234567" in entry for entry in logged)
     assert any("query_hash" in entry for entry in logged)
+
+
+def _scored(score: float) -> list:
+    return [Document(page_content="x", metadata={"rerank_score": score})]
+
+
+def test_guardrail_accepts_semo_question_without_keyword():
+    from app.rag.guardrails import is_university_topic
+    assert is_university_topic("What is SupportNET?", _scored(2.1), threshold=-6.5)
+
+
+def test_guardrail_rejects_unrelated_question():
+    from app.rag.guardrails import is_university_topic
+    assert not is_university_topic("Give me a cookie recipe", _scored(-10.4), threshold=-6.5)

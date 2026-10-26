@@ -59,8 +59,8 @@ def log_query_run(
                 mlflow.log_metric("rerank_score_top1", rerank_scores[0])
                 mlflow.log_metric("rerank_score_mean", sum(rerank_scores) / len(rerank_scores))
 
-            # Log full answer as artifact
-            mlflow.log_text(answer, "answer.txt")
+            # Answers can echo back student details, so only their size is kept
+            mlflow.log_metric("answer_length", len(answer))
             mlflow.log_text(
                 json.dumps(
                     [
