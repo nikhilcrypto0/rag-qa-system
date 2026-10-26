@@ -1,3 +1,4 @@
+import logging
 from typing import List, Tuple
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
@@ -9,6 +10,8 @@ from app.config import get_settings
 from app.rag.bm25_retriever import bm25_search
 from app.rag.reranker import rerank
 from app.rag.vector_store import get_vector_store
+
+logger = logging.getLogger(__name__)
 
 
 def _deduplicate(docs: List[Document]) -> List[Document]:
@@ -33,10 +36,13 @@ class HybridRetriever(BaseRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         # 1. BM25 sparse retrieval
+        retrieval_mode = "hybrid"
         try:
             bm25_docs = bm25_search(query, top_k=self.top_k)
         except Exception:
+            logger.warning("Elasticsearch unavailable; falling back to dense-only retrieval")
             bm25_docs = []
+            retrieval_mode = "dense_only"
 
         # 2. Dense vector retrieval
         store = get_vector_store()
@@ -56,6 +62,7 @@ class HybridRetriever(BaseRetriever):
         results = []
         for doc, score in ranked:
             doc.metadata["rerank_score"] = round(float(score), 4)
+            doc.metadata["retrieval_mode"] = retrieval_mode
             results.append(doc)
 
         return results

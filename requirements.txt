@@ -39,3 +39,7 @@ aiofiles>=23.2.0
 
 # Rate limiting
 slowapi>=0.1.9
+
+# Testing & evaluation
+pytest>=8.0.0
+rank-bm25>=0.2.2

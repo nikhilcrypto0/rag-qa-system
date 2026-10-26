@@ -59,6 +59,7 @@ async def query(request: QueryRequest, background_tasks: BackgroundTasks) -> Que
         retrieval_latency_ms=round(retrieval_ms, 2),
         generation_latency_ms=round(generation_ms, 2),
         total_latency_ms=round(retrieval_ms + generation_ms, 2),
+        retrieval_mode=docs[0].metadata.get("retrieval_mode", "hybrid") if docs else "hybrid",
     )
 
 

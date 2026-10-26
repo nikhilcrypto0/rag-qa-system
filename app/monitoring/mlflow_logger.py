@@ -1,10 +1,14 @@
+import hashlib
 import json
+import logging
 from typing import List
 
 import mlflow
 from langchain_core.documents import Document
 
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
 
 _initialized = False
 
@@ -41,7 +45,9 @@ def log_query_run(
         source_files = list({doc.metadata.get("source", "unknown") for doc in retrieved_docs})
 
         with mlflow.start_run():
-            mlflow.log_param("query", query[:250])
+            # Never store raw student questions (FERPA); a hash still lets repeats be counted.
+            mlflow.log_param("query_hash", hashlib.sha256(query.encode()).hexdigest()[:16])
+            mlflow.log_param("query_length", len(query))
             mlflow.log_param("num_docs_retrieved", len(retrieved_docs))
             mlflow.log_param("source_files", json.dumps(source_files))
 
@@ -70,5 +76,5 @@ def log_query_run(
                 "retrieved_docs.json",
             )
     except Exception:
-        # Monitoring failures must never break the main query path
-        pass
+        # Monitoring failures must never break the main query path, but must be visible
+        logger.warning("MLflow logging failed", exc_info=True)
