@@ -54,6 +54,14 @@ def test_mlflow_never_logs_raw_question(_ensure, mock_mlflow):
     assert any("query_hash" in entry for entry in logged)
 
 
+def test_semo_acronym_expanded_for_reranker_only():
+    from app.rag.hybrid_retriever import _expand_acronyms
+    assert _expand_acronyms("When was SEMO founded?") == (
+        "When was Southeast Missouri State University (SEMO) founded?"
+    )
+    assert _expand_acronyms("seminar times") == "seminar times"
+
+
 def _scored(score: float) -> list:
     return [Document(page_content="x", metadata={"rerank_score": score})]
 
