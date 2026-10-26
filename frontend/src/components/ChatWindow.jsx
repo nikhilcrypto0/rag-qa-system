@@ -56,6 +56,7 @@ export default function ChatWindow({ userEmail, onLogout, apiBase }) {
         })
 
         if (!res.ok) throw new Error(`Server error ${res.status}`)
+        const degraded = res.headers.get('X-Retrieval-Mode') === 'dense_only'
 
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
@@ -83,7 +84,7 @@ export default function ChatWindow({ userEmail, onLogout, apiBase }) {
           }
         }
         setMessages(prev => prev.map(m =>
-          m.id === assistantId ? { ...m, streaming: false } : m
+          m.id === assistantId ? { ...m, streaming: false, degraded } : m
         ))
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -107,6 +108,7 @@ export default function ChatWindow({ userEmail, onLogout, apiBase }) {
           content: data.answer,
           sources: data.sources || [],
           latency: data.total_latency_ms,
+          degraded: data.retrieval_mode === 'dense_only',
         }])
       } catch (err) {
         setError('Something went wrong. Please try again.')

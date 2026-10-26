@@ -1,3 +1,5 @@
+import logging
+import re
 from typing import List, Tuple
 
 from langchain_core.callbacks import CallbackManagerForRetrieverRun
@@ -9,6 +11,17 @@ from app.config import get_settings
 from app.rag.bm25_retriever import bm25_search
 from app.rag.reranker import rerank
 from app.rag.vector_store import get_vector_store
+
+logger = logging.getLogger(__name__)
+
+
+_SEMO = re.compile(r"\bsemo\b", re.IGNORECASE)
+
+
+def _expand_acronyms(query: str) -> str:
+    """Spell out SEMO for the reranker: semo.edu pages use the full name, and the general-purpose
+    cross-encoder doesn't know the acronym (history chunk scored -6.6 vs +8.4 expanded)."""
+    return _SEMO.sub("Southeast Missouri State University (SEMO)", query)
 
 
 def _deduplicate(docs: List[Document]) -> List[Document]:
@@ -33,10 +46,13 @@ class HybridRetriever(BaseRetriever):
         self, query: str, *, run_manager: CallbackManagerForRetrieverRun
     ) -> List[Document]:
         # 1. BM25 sparse retrieval
+        retrieval_mode = "hybrid"
         try:
             bm25_docs = bm25_search(query, top_k=self.top_k)
         except Exception:
+            logger.warning("Elasticsearch unavailable; falling back to dense-only retrieval")
             bm25_docs = []
+            retrieval_mode = "dense_only"
 
         # 2. Dense vector retrieval
         store = get_vector_store()
@@ -50,12 +66,14 @@ class HybridRetriever(BaseRetriever):
         candidates = _deduplicate(bm25_docs + dense_docs)
 
         # 4. Cross-encoder re-ranking
-        ranked: List[Tuple[Document, float]] = rerank(query, candidates, top_n=self.top_n)
+        # Expansion only here: it helps the cross-encoder but its common words dilute BM25/dense
+        ranked: List[Tuple[Document, float]] = rerank(_expand_acronyms(query), candidates, top_n=self.top_n)
 
         # 5. Attach rerank score to metadata and return
         results = []
         for doc, score in ranked:
             doc.metadata["rerank_score"] = round(float(score), 4)
+            doc.metadata["retrieval_mode"] = retrieval_mode
             results.append(doc)
 
         return results

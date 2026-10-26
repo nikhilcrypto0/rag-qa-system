@@ -45,6 +45,9 @@ class Settings(BaseSettings):
 
     # Guardrails
     enable_domain_guardrails: bool = True
+    # Questions whose best-matching chunk reranks below this are off-topic.
+    # Measured 2026-10-26: real SEMO questions >= -3.5, off-topic <= -9.6.
+    offtopic_rerank_threshold: float = -6.5
 
     # Scraper
     allowed_scrape_domain: str = "semo.edu"

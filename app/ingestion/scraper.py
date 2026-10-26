@@ -1,6 +1,8 @@
 import logging
+import time
 from typing import List, Tuple
 from urllib.parse import urljoin, urlparse
+from urllib.robotparser import RobotFileParser
 
 import requests
 from bs4 import BeautifulSoup
@@ -10,6 +12,36 @@ logger = logging.getLogger(__name__)
 
 HEADERS = {"User-Agent": "SEMO-RAG-Bot/1.0 (university-research-project)"}
 REQUEST_TIMEOUT = 15
+CRAWL_DELAY_SECONDS = 1.0
+
+_robots_cache: dict = {}
+
+
+def _robots_for(url: str) -> RobotFileParser:
+    """Fetch and cache robots.txt per host. Unreachable robots.txt allows crawling (standard behaviour)."""
+    parsed = urlparse(url)
+    host = f"{parsed.scheme}://{parsed.netloc}"
+    if host not in _robots_cache:
+        parser = RobotFileParser()
+        try:
+            resp = requests.get(f"{host}/robots.txt", headers=HEADERS, timeout=REQUEST_TIMEOUT)
+            parser.parse(resp.text.splitlines() if resp.ok else [])
+        except requests.RequestException:
+            logger.warning("Could not fetch robots.txt for %s; assuming allowed", host)
+            parser.parse([])
+        _robots_cache[host] = parser
+    return _robots_cache[host]
+
+
+def _polite_get(url: str) -> requests.Response:
+    """GET a page only if robots.txt allows it, waiting between requests to avoid hammering the site."""
+    robots = _robots_for(url)
+    if not robots.can_fetch(HEADERS["User-Agent"], url):
+        raise PermissionError(f"robots.txt disallows {url}")
+    time.sleep(robots.crawl_delay(HEADERS["User-Agent"]) or CRAWL_DELAY_SECONDS)
+    resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
+    resp.raise_for_status()
+    return resp
 
 
 def _is_same_domain(url: str, base_domain: str) -> bool:
@@ -52,8 +84,7 @@ def scrape_url(url: str, allowed_domain: str = "") -> List[Document]:
     if allowed_domain and not _is_same_domain(url, allowed_domain):
         raise ValueError(f"URL {url} is outside allowed domain {allowed_domain}")
 
-    resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
-    resp.raise_for_status()
+    resp = _polite_get(url)
 
     title, text = _extract_text(resp.text, url)
     if not text.strip():
@@ -87,8 +118,7 @@ def scrape_recursive(
         visited.add(url)
 
         try:
-            resp = requests.get(url, headers=HEADERS, timeout=REQUEST_TIMEOUT)
-            resp.raise_for_status()
+            resp = _polite_get(url)
             title, text = _extract_text(resp.text, url)
 
             if text.strip():

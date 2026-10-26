@@ -28,7 +28,7 @@ def test_health():
 @patch("app.api.routes.query.generate_answer", return_value="Transformers use self-attention. [Source: transformers.txt, chunk 1]")
 @patch("app.api.routes.query.log_query_run")
 def test_query_endpoint(mock_log, mock_gen, mock_retrieve):
-    response = client.post("/query", json={"question": "What is a Transformer?"})
+    response = client.post("/query", json={"question": "How do I apply for financial aid at SEMO?"})
     assert response.status_code == 200
     data = response.json()
     assert "answer" in data

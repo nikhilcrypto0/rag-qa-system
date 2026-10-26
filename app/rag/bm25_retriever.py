@@ -55,7 +55,7 @@ def index_documents(chunks: List[Document]) -> None:
 
 
 def bm25_search(query: str, top_k: int) -> List[Document]:
-    """Run a BM25 query against Elasticsearch and return matching Documents."""
+    """Run a BM25 query against Elasticsearch and return matching Documents. Raises if ES is unreachable."""
     try:
         settings = get_settings()
         es = _get_es_client()
@@ -87,5 +87,5 @@ def bm25_search(query: str, top_k: int) -> List[Document]:
             )
         return docs
     except Exception:
-        logger.warning("BM25 search failed, returning empty results", exc_info=True)
-        return []
+        logger.warning("BM25 search failed", exc_info=True)
+        raise

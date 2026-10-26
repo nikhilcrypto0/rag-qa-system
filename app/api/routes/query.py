@@ -29,21 +29,23 @@ def _doc_to_source(doc) -> SourceDocument:
 async def query(request: QueryRequest, background_tasks: BackgroundTasks) -> QueryResponse:
     """Retrieve relevant context, generate a grounded answer, and return with source citations."""
 
-    # Guardrail pre-filter
-    settings = get_settings()
-    if settings.enable_domain_guardrails and not is_university_topic(request.question):
-        return QueryResponse(
-            answer=OFF_TOPIC_RESPONSE,
-            sources=[],
-            retrieval_latency_ms=0.0,
-            generation_latency_ms=0.0,
-            total_latency_ms=0.0,
-        )
-
     # Retrieval
     t0 = time.perf_counter()
     docs = retrieve_context(request.question)
     retrieval_ms = (time.perf_counter() - t0) * 1000
+
+    # Guardrail: needs retrieval scores, but runs before any (paid) generation
+    settings = get_settings()
+    if settings.enable_domain_guardrails and not is_university_topic(
+        request.question, docs, settings.offtopic_rerank_threshold
+    ):
+        return QueryResponse(
+            answer=OFF_TOPIC_RESPONSE,
+            sources=[],
+            retrieval_latency_ms=round(retrieval_ms, 2),
+            generation_latency_ms=0.0,
+            total_latency_ms=round(retrieval_ms, 2),
+        )
 
     # Generation
     t1 = time.perf_counter()
@@ -59,6 +61,7 @@ async def query(request: QueryRequest, background_tasks: BackgroundTasks) -> Que
         retrieval_latency_ms=round(retrieval_ms, 2),
         generation_latency_ms=round(generation_ms, 2),
         total_latency_ms=round(retrieval_ms + generation_ms, 2),
+        retrieval_mode=docs[0].metadata.get("retrieval_mode", "hybrid") if docs else "hybrid",
     )
 
 
@@ -66,19 +69,26 @@ async def query(request: QueryRequest, background_tasks: BackgroundTasks) -> Que
 async def query_stream(request: QueryRequest) -> StreamingResponse:
     """Stream the answer token-by-token via Server-Sent Events."""
 
-    # Guardrail pre-filter
+    docs = retrieve_context(request.question)
+
+    # Guardrail: needs retrieval scores, but runs before any (paid) generation
     settings = get_settings()
-    if settings.enable_domain_guardrails and not is_university_topic(request.question):
+    if settings.enable_domain_guardrails and not is_university_topic(
+        request.question, docs, settings.offtopic_rerank_threshold
+    ):
         async def off_topic_stream():
             yield f"data: {OFF_TOPIC_RESPONSE}\n\n"
             yield "data: [DONE]\n\n"
         return StreamingResponse(off_topic_stream(), media_type="text/event-stream")
-
-    docs = retrieve_context(request.question)
 
     async def event_generator() -> AsyncGenerator[str, None]:
         async for token in stream_answer(request.question, docs):
             yield f"data: {json.dumps(token)}\n\n"
         yield "data: [DONE]\n\n"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    retrieval_mode = docs[0].metadata.get("retrieval_mode", "hybrid") if docs else "hybrid"
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"X-Retrieval-Mode": retrieval_mode},
+    )

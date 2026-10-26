@@ -28,6 +28,7 @@ class QueryResponse(BaseModel):
     retrieval_latency_ms: float
     generation_latency_ms: float
     total_latency_ms: float
+    retrieval_mode: str = Field(default="hybrid", description='"hybrid" or "dense_only" when Elasticsearch is down')
 
 
 class IngestUrlRequest(BaseModel):

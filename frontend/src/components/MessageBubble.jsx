@@ -25,6 +25,9 @@ export default function MessageBubble({ message }) {
         {!isUser && message.sources && message.sources.length > 0 && (
           <SourceCitations sources={message.sources} />
         )}
+        {message.degraded && (
+          <span className={styles.degraded}>Keyword search was offline, so this answer may be less precise.</span>
+        )}
         {message.latency && (
           <span className={styles.latency}>{Math.round(message.latency)}ms</span>
         )}

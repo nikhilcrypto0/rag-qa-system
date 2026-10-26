@@ -1,3 +1,7 @@
+from typing import List
+
+from langchain_core.documents import Document
+
 SEMO_TOPICS = [
     "admission", "enrollment", "tuition", "financial aid", "scholarship",
     "course", "curriculum", "semester", "faculty", "professor", "campus",
@@ -19,9 +23,13 @@ OFF_TOPIC_RESPONSE = (
     "Please ask a SEMO-related question."
 )
 
-def is_university_topic(query: str) -> bool:
+def is_university_topic(query: str, docs: List[Document], threshold: float) -> bool:
+    """On-topic if it names a SEMO keyword or semo.edu has a genuinely relevant passage.
+    Keywords alone rejected 11 of 30 real SEMO questions (e.g. "What is SupportNET?")."""
     q = query.lower()
-    return any(topic in q for topic in SEMO_TOPICS)
+    if any(topic in q for topic in SEMO_TOPICS):
+        return True
+    return any(doc.metadata.get("rerank_score", float("-inf")) >= threshold for doc in docs)
 
 def get_domain_system_prompt() -> str:
     return """You are the SEMO Assistant — a friendly Q&A assistant for Southeast Missouri State University (semo.edu).
