@@ -10,6 +10,7 @@ export default defineConfig({
     proxy: {
       '/query': 'http://localhost:8000',
       '/ingest': 'http://localhost:8000',
+      '/feedback': 'http://localhost:8000',
     }
   }
 })

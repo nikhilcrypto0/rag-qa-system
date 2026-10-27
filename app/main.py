@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api.routes import ingest, query, ingest_url
+from app.api.routes import feedback, ingest, query, ingest_url
 from app.middleware.auth import AuthMiddleware
 from app.middleware.rate_limit import limiter, RateLimitExceeded, _rate_limit_exceeded_handler
 from app.rag.embeddings import get_embeddings
@@ -46,6 +46,7 @@ app.add_middleware(
 app.include_router(ingest.router, tags=["Ingestion"])
 app.include_router(ingest_url.router, tags=["Ingestion"])
 app.include_router(query.router, tags=["Query"])
+app.include_router(feedback.router, tags=["Feedback"])
 
 
 @app.get("/health", tags=["Health"])

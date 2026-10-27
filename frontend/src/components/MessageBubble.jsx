@@ -1,9 +1,9 @@
 import ReactMarkdown from 'react-markdown'
-import { User, GraduationCap } from 'lucide-react'
+import { User, GraduationCap, ThumbsUp, ThumbsDown } from 'lucide-react'
 import SourceCitations from './SourceCitations.jsx'
 import styles from './MessageBubble.module.css'
 
-export default function MessageBubble({ message }) {
+export default function MessageBubble({ message, onFeedback }) {
   const isUser = message.role === 'user'
 
   return (
@@ -27,6 +27,30 @@ export default function MessageBubble({ message }) {
         )}
         {message.degraded && (
           <span className={styles.degraded}>Keyword search was offline, so this answer may be less precise.</span>
+        )}
+        {!isUser && message.responseId && !message.streaming && (
+          <div className={styles.feedback}>
+            {message.rating ? (
+              <span className={styles.feedbackThanks}>Thanks for the feedback</span>
+            ) : (
+              <>
+                <button
+                  className={styles.feedbackBtn}
+                  onClick={() => onFeedback(message.id, message.responseId, 'up')}
+                  aria-label="Helpful answer"
+                >
+                  <ThumbsUp size={14} />
+                </button>
+                <button
+                  className={styles.feedbackBtn}
+                  onClick={() => onFeedback(message.id, message.responseId, 'down')}
+                  aria-label="Unhelpful answer"
+                >
+                  <ThumbsDown size={14} />
+                </button>
+              </>
+            )}
+          </div>
         )}
         {message.latency && (
           <span className={styles.latency}>{Math.round(message.latency)}ms</span>

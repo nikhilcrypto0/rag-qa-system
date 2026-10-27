@@ -105,3 +105,31 @@
   margin-top: 6px;
   font-style: italic;
 }
+
+.feedback {
+  display: flex;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.feedbackBtn {
+  display: inline-flex;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color 150ms, border-color 150ms;
+}
+
+.feedbackBtn:hover,
+.feedbackBtn:focus-visible {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.feedbackThanks {
+  font-size: 11px;
+  color: var(--color-success);
+}
