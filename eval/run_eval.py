@@ -62,6 +62,8 @@ def main() -> None:
 
     for i, case in enumerate(cases, 1):
         q, expected = case["question"], normalize(case["expected_source"])
+        # Some questions are answered equally well by another page (verified by reading it)
+        accepted = {expected, *(normalize(u) for u in case.get("also_accept", []))}
 
         t0 = time.perf_counter()
         docs = retriever.invoke(q)
@@ -70,7 +72,7 @@ def main() -> None:
 
         ranked = [normalize(d.metadata.get("source", "")) for d in docs]
 
-        rank = next((j for j, s in enumerate(ranked, 1) if s == expected), None)
+        rank = next((j for j, s in enumerate(ranked, 1) if s in accepted), None)
         top1 = rank == 1
         top3 = rank is not None and rank <= 3
 
