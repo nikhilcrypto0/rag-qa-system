@@ -57,6 +57,7 @@ export default function ChatWindow({ userEmail, onLogout, apiBase }) {
 
         if (!res.ok) throw new Error(`Server error ${res.status}`)
         const degraded = res.headers.get('X-Retrieval-Mode') === 'dense_only'
+        const responseId = res.headers.get('X-Response-Id') || ''
 
         const reader = res.body.getReader()
         const decoder = new TextDecoder()
@@ -84,7 +85,7 @@ export default function ChatWindow({ userEmail, onLogout, apiBase }) {
           }
         }
         setMessages(prev => prev.map(m =>
-          m.id === assistantId ? { ...m, streaming: false, degraded } : m
+          m.id === assistantId ? { ...m, streaming: false, degraded, responseId } : m
         ))
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -109,6 +110,7 @@ export default function ChatWindow({ userEmail, onLogout, apiBase }) {
           sources: data.sources || [],
           latency: data.total_latency_ms,
           degraded: data.retrieval_mode === 'dense_only',
+          responseId: data.response_id || '',
         }])
       } catch (err) {
         setError('Something went wrong. Please try again.')
@@ -118,6 +120,20 @@ export default function ChatWindow({ userEmail, onLogout, apiBase }) {
     setIsLoading(false)
     inputRef.current?.focus()
   }, [input, isLoading, streaming, userEmail, apiBase])
+
+  const sendFeedback = useCallback(async (messageId, responseId, rating) => {
+    try {
+      const res = await fetch(`${apiBase}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-User-Email': userEmail },
+        body: JSON.stringify({ response_id: responseId, rating }),
+      })
+      if (!res.ok) throw new Error(`Server error ${res.status}`)
+      setMessages(prev => prev.map(m => (m.id === messageId ? { ...m, rating } : m)))
+    } catch {
+      setError('Could not save your feedback. Please try again.')
+    }
+  }, [apiBase, userEmail])
 
   const handleKey = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -159,7 +175,7 @@ export default function ChatWindow({ userEmail, onLogout, apiBase }) {
       {/* Messages */}
       <main className={styles.messages} role="log" aria-live="polite" aria-label="Chat messages">
         {messages.map(msg => (
-          <MessageBubble key={msg.id} message={msg} />
+          <MessageBubble key={msg.id} message={msg} onFeedback={sendFeedback} />
         ))}
         {isLoading && !streaming && <TypingIndicator />}
         {error && (

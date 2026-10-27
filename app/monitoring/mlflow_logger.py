@@ -34,6 +34,7 @@ def log_query_run(
     retrieved_docs: List[Document],
     retrieval_latency_ms: float,
     generation_latency_ms: float,
+    response_id: str = "",
 ) -> None:
     """Log a single RAG query/response run to MLflow."""
     try:
@@ -48,6 +49,7 @@ def log_query_run(
             # Never store raw student questions (FERPA); a hash still lets repeats be counted.
             mlflow.log_param("query_hash", hashlib.sha256(query.encode()).hexdigest()[:16])
             mlflow.log_param("query_length", len(query))
+            mlflow.log_param("response_id", response_id)
             mlflow.log_param("num_docs_retrieved", len(retrieved_docs))
             mlflow.log_param("source_files", json.dumps(source_files))
 
@@ -78,3 +80,14 @@ def log_query_run(
     except Exception:
         # Monitoring failures must never break the main query path, but must be visible
         logger.warning("MLflow logging failed", exc_info=True)
+
+
+def log_feedback(response_id: str, rating: str) -> None:
+    """Log a thumbs up/down for an answer; join to its query run on response_id."""
+    try:
+        _ensure_experiment()
+        with mlflow.start_run(tags={"kind": "feedback"}):
+            mlflow.log_param("response_id", response_id)
+            mlflow.log_param("rating", rating)
+    except Exception:
+        logger.warning("MLflow feedback logging failed", exc_info=True)

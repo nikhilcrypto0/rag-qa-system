@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -23,12 +23,18 @@ class QueryRequest(BaseModel):
 
 
 class QueryResponse(BaseModel):
+    response_id: str = Field(default="", description="Pass to /feedback; empty for off-topic replies")
     answer: str
     sources: List[SourceDocument]
     retrieval_latency_ms: float
     generation_latency_ms: float
     total_latency_ms: float
     retrieval_mode: str = Field(default="hybrid", description='"hybrid" or "dense_only" when Elasticsearch is down')
+
+
+class FeedbackRequest(BaseModel):
+    response_id: str = Field(..., pattern=r"^[0-9a-f]{32}$")
+    rating: Literal["up", "down"]
 
 
 class IngestUrlRequest(BaseModel):

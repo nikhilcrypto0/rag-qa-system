@@ -1,5 +1,7 @@
+import asyncio
 import json
 import time
+import uuid
 from typing import AsyncGenerator
 
 from fastapi import APIRouter, BackgroundTasks
@@ -53,9 +55,13 @@ async def query(request: QueryRequest, background_tasks: BackgroundTasks) -> Que
     generation_ms = (time.perf_counter() - t1) * 1000
 
     # Log to MLflow (non-blocking)
-    background_tasks.add_task(log_query_run, request.question, answer, docs, retrieval_ms, generation_ms)
+    response_id = uuid.uuid4().hex
+    background_tasks.add_task(
+        log_query_run, request.question, answer, docs, retrieval_ms, generation_ms, response_id
+    )
 
     return QueryResponse(
+        response_id=response_id,
         answer=answer,
         sources=[_doc_to_source(d) for d in docs],
         retrieval_latency_ms=round(retrieval_ms, 2),
@@ -69,7 +75,9 @@ async def query(request: QueryRequest, background_tasks: BackgroundTasks) -> Que
 async def query_stream(request: QueryRequest) -> StreamingResponse:
     """Stream the answer token-by-token via Server-Sent Events."""
 
+    t0 = time.perf_counter()
     docs = retrieve_context(request.question)
+    retrieval_ms = (time.perf_counter() - t0) * 1000
 
     # Guardrail: needs retrieval scores, but runs before any (paid) generation
     settings = get_settings()
@@ -81,14 +89,24 @@ async def query_stream(request: QueryRequest) -> StreamingResponse:
             yield "data: [DONE]\n\n"
         return StreamingResponse(off_topic_stream(), media_type="text/event-stream")
 
+    response_id = uuid.uuid4().hex
+
     async def event_generator() -> AsyncGenerator[str, None]:
+        t1 = time.perf_counter()
+        tokens = []
         async for token in stream_answer(request.question, docs):
+            tokens.append(token)
             yield f"data: {json.dumps(token)}\n\n"
         yield "data: [DONE]\n\n"
+        # Streaming is the UI default, so it must be monitored too
+        generation_ms = (time.perf_counter() - t1) * 1000
+        await asyncio.to_thread(
+            log_query_run, request.question, "".join(tokens), docs, retrieval_ms, generation_ms, response_id
+        )
 
     retrieval_mode = docs[0].metadata.get("retrieval_mode", "hybrid") if docs else "hybrid"
     return StreamingResponse(
         event_generator(),
         media_type="text/event-stream",
-        headers={"X-Retrieval-Mode": retrieval_mode},
+        headers={"X-Retrieval-Mode": retrieval_mode, "X-Response-Id": response_id},
     )

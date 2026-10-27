@@ -28,5 +28,5 @@
   {"question": "I am an international student, how do I apply to SEMO?", "expected_source": "https://semo.edu/international/admissions/index", "style": "natural"},
   {"question": "Does SEMO offer an Intensive English Program?", "expected_source": "https://semo.edu/international/admissions/index", "style": "specific"},
   {"question": "Can I reserve a study room at the library?", "expected_source": "https://library.semo.edu/", "style": "natural"},
-  {"question": "How do I find a faculty member's phone number or email?", "expected_source": "https://semo.edu/information-technology/people-search", "style": "natural"}
+  {"question": "How do I find a faculty member's phone number or email?", "expected_source": "https://semo.edu/information-technology/people-search", "also_accept": ["https://semo.edu/information-technology/student-search"], "style": "natural"}
 ]
