@@ -1,7 +1,14 @@
+import hashlib
 from typing import List
 
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+
+def chunk_id(chunk: Document) -> str:
+    """Stable ID from source + text, so re-ingesting the same page can't create duplicates."""
+    key = f"{chunk.metadata.get('source', 'unknown')}\n{chunk.page_content}"
+    return hashlib.sha256(key.encode()).hexdigest()
 
 
 def split_documents(documents: List[Document], chunk_size: int = 512, chunk_overlap: int = 64) -> List[Document]:

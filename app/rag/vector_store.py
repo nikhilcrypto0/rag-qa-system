@@ -5,6 +5,7 @@ from langchain_core.documents import Document
 from langchain_core.vectorstores import VectorStore
 
 from app.config import get_settings
+from app.ingestion.splitter import chunk_id
 from app.rag.embeddings import get_embeddings
 
 _vector_store: VectorStore | None = None
@@ -63,12 +64,18 @@ def _init_pinecone() -> VectorStore:
 
 
 def add_documents_to_store(chunks: List[Document]) -> None:
-    """Index chunks into the active vector store and persist if FAISS."""
+    """Index chunks into the active vector store and persist if FAISS. Already-indexed chunks are skipped."""
     settings = get_settings()
     store = get_vector_store()
-    store.add_documents(chunks)
 
+    ids = [chunk_id(c) for c in chunks]
     if settings.vector_store == "faiss":
         from langchain_community.vectorstores import FAISS
         assert isinstance(store, FAISS)
+        existing = set(store.index_to_docstore_id.values())
+        new = {i: c for i, c in zip(ids, chunks) if i not in existing}  # dict also drops in-batch repeats
+        if new:
+            store.add_documents(list(new.values()), ids=list(new.keys()))
         store.save_local(settings.faiss_index_path)
+    else:
+        store.add_documents(chunks, ids=ids)  # Pinecone upserts by ID

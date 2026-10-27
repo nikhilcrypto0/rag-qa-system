@@ -63,6 +63,7 @@ def main() -> None:
 
     for i, case in enumerate(cases, 1):
         q, expected = case["question"], normalize(case["expected_source"])
+        accepted = {expected, *(normalize(u) for u in case.get("also_accept", []))}
 
         t0 = time.perf_counter()
         # 1. BM25 sparse (in-process stand-in for Elasticsearch)
@@ -83,7 +84,7 @@ def main() -> None:
         lat.append(ms)
 
         srcs = [normalize(d.metadata.get("source", "")) for d in ranked]
-        rank = next((j for j, s in enumerate(srcs, 1) if s == expected), None)
+        rank = next((j for j, s in enumerate(srcs, 1) if s in accepted), None)
         hits1 += rank == 1
         hits3 += rank is not None and rank <= 3
         rr.append(1.0 / rank if rank else 0.0)

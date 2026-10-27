@@ -5,6 +5,7 @@ from elasticsearch import Elasticsearch
 from langchain_core.documents import Document
 
 from app.config import get_settings
+from app.ingestion.splitter import chunk_id
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,8 @@ def index_documents(chunks: List[Document]) -> None:
 
         operations = []
         for i, chunk in enumerate(chunks):
-            operations.append({"index": {"_index": settings.elasticsearch_index}})
+            # Fixed _id: re-indexing a chunk overwrites it instead of duplicating it
+            operations.append({"index": {"_index": settings.elasticsearch_index, "_id": chunk_id(chunk)}})
             operations.append(
                 {
                     "content": chunk.page_content,

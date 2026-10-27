@@ -22,7 +22,7 @@
   {"question": "Where can I find the academic calendar and final exam schedule?", "expected_source": "https://semo.edu/student-support/academic-support/registrar/index", "style": "natural"},
   {"question": "Which office maintains student academic records and handles FERPA?", "expected_source": "https://semo.edu/student-support/academic-support/registrar/index", "style": "specific"},
   {"question": "How do I join a club or student organization on campus?", "expected_source": "https://semo.edu/life-at-semo/student-life/student-orgs/index", "style": "natural"},
-  {"question": "Does SEMO have fraternities and sororities?", "expected_source": "https://semo.edu/life-at-semo/student-life/student-orgs/index", "style": "natural"},
+  {"question": "Does SEMO have fraternities and sororities?", "expected_source": "https://semo.edu/life-at-semo/student-life/student-orgs/index", "also_accept": ["https://semo.edu/campus-life/index"], "style": "natural"},
   {"question": "Where can I get counseling or mental health support as a student?", "expected_source": "https://semo.edu/student-support/health-wellness/index", "style": "natural"},
   {"question": "Does SEMO have a food pantry for students?", "expected_source": "https://semo.edu/student-support/health-wellness/index", "style": "natural"},
   {"question": "I am an international student, how do I apply to SEMO?", "expected_source": "https://semo.edu/international/admissions/index", "style": "natural"},
